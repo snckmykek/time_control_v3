@@ -1,0 +1,167 @@
+#: import ShortTasksBox shorttasks
+
+TimeControlScreen:
+    MDNavigationLayout:
+        ScreenManager:
+            id: screen_manager
+            Screen:
+                name: 'main screen'
+                MDFloatLayout:
+                    BoxLayout:
+                        orientation: 'vertical'
+
+                        MDToolbar:
+                            title: 'Time control'
+                            elevation: 10
+                            left_action_items: [['menu', lambda x: nav_drawer.set_state("open")]]
+                            right_action_items: [['dots-vertical', lambda x: root.open_dropdown(x)]]
+
+                        MDBottomNavigation:
+                            id: main_navigator
+                            current_tab: 'task screen'
+
+                            MDBottomNavigationItem:
+                                name: 'task screen'
+                                text: 'Tasks'
+                                icon: 'view-list'
+                                on_tab_press: main_navigator.current_tab = self.name
+
+                                MDBoxLayout:
+                                    ScrollView:
+                                        MDList:
+                                            id: tasks_page
+
+                            MDBottomNavigationItem:
+                                name: 'short task screen'
+                                text: 'Short tasks'
+                                icon: 'format-list-checks'
+                                on_tab_press: main_navigator.current_tab = self.name
+
+                                ShortTasksBox:
+                                    id: shorttasks_box
+
+                            MDBottomNavigationItem:
+                                name: 'result screen'
+                                text: 'Result'
+                                icon: 'trending-up'
+                                on_tab_press: main_navigator.current_tab = self.name
+
+                                MDBoxLayout:
+                                    MDLabel:
+                                        text: 'screen 3'
+                                        halign: 'center'
+
+                    MDFloatingActionButton:
+                        pos_hint: {'x': .60, 'y': .05}
+                        icon: "plus" if main_navigator.current_tab != 'result screen' else "close"
+                        on_press:  root.round_button(main_navigator.current_tab)
+
+        MDNavigationDrawer:
+            id: nav_drawer
+            title: 'Time control'
+
+            ContentNavigationDrawer:
+                screen_manager: screen_manager
+                nav_drawer: nav_drawer
+
+
+<TasksListItem>:
+
+    icon: root.priority_icons[root.priority]
+    ripple_behavior: True
+    tertiary_text: "{:02d}:{:02d} / {:02d}:{:02d}".format(*[int(x) for x in divmod((app.root.task_bar.ids.progress.value/100*self.all_time if self.ids.buttons.ids.play_button.in_progress else self.passed_time) // 60, 60)], *[int(x) for x in divmod(self.all_time // 60, 60)])
+    on_size:
+        self.ids._right_container.width = buttons.width
+        self.ids._right_container.x = buttons.width
+
+    on_press: self.show_task()
+
+    IconLeftWidget:
+        icon: root.icon
+        theme_text_color: "Custom"
+        text_color: (.13,.59,.95, 1)
+
+    TasksListItemRightField:
+        task_list_item: root
+        id: buttons
+
+
+<TasksListItemRightField>:
+
+    MDIconButton:
+        in_progress: False
+        id: play_button
+        icon: "pause" if self.in_progress else "play"
+        theme_text_color: "Custom"
+        text_color: app.theme_cls.icon_color
+        on_press: root.task_list_item.on_press_play_button(self, )
+
+    MDIconButton:
+        id: stop_button
+        icon: "stop"
+        theme_text_color: "Custom"
+        text_color: app.theme_cls.icon_color
+        on_press: root.task_list_item.on_press_stop_button(play_button)
+
+
+<ContentNavigationDrawer>:
+    orientation: "vertical"
+    padding: "8dp"
+    spacing: "8dp"
+
+    AnchorLayout:
+        anchor_x: "left"
+        anchor_y: "top"
+        size_hint_y: None
+        height: avatar.height
+        padding_x: 50
+
+        Image:
+            id: avatar
+            size_hint: None, None
+            size: "100dp", "100dp"
+            source: "images/tasks.png"
+            allow_stretch: True
+            color: app.theme_cls.icon_color
+        MDIconButton:
+            icon: "close"
+            on_press:
+                root.nav_drawer.set_state("close")
+                root.screen_manager.current = "main screen"
+
+    MDLabel:
+        text: "Time control"
+        font_style: "Button"
+        size_hint_y: None
+        height: self.texture_size[1]
+
+    MDLabel:
+        text: "test@gmail.com"
+        font_style: "Caption"
+        size_hint_y: None
+        height: self.texture_size[1]
+
+    ScrollView:
+
+        DrawerList:
+            ItemDrawer:
+                icon: "folder"
+                text: "Folders"
+            ItemDrawer:
+                icon: "cog"
+                text: "Settings"
+            ItemDrawer:
+                icon: "close"
+                text: "Exit"
+
+
+# Menu item in the DrawerList list.
+<ItemDrawer>:
+    theme_text_color: "Custom"
+    on_release: self.parent.set_color_item(self)
+
+    IconLeftWidget:
+        id: icon
+        icon: root.icon
+        theme_text_color: "Custom"
+        text_color: self.theme_cls.icon_color
